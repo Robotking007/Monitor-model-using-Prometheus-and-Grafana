@@ -6,17 +6,16 @@ and renders high-resolution visualization charts for inclusion in the formal lab
 Student: Siddhant Udavant (Roll No: 20, PRN: 12414447, Branch: AI&DS, Div: F)
 """
 
-import json
 import os
 import random
 import time
-from typing import List, Dict, Any
+from typing import Dict, Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from fastapi.testclient import TestClient
 
-from app import app, stats, FEATURES, CLASSES
+from app import app, FEATURES, CLASSES
 
 # Ensure figures directory exists
 os.makedirs("figures", exist_ok=True)
@@ -209,9 +208,6 @@ import matplotlib.patches as mpatches
 
 def generate_figures(history: Dict[str, Any]):
     print("\nGenerating report figures...")
-    total_reqs = len(history["timestamp"])
-    total_errs = history["cumulative_errors"][-1] if history["cumulative_errors"] else 0
-
     # Set overall aesthetic
     plt.style.use("seaborn-v0_8-whitegrid" if "seaborn-v0_8-whitegrid" in plt.style.available else "default")
     plt.rcParams["font.sans-serif"] = "Arial"
@@ -319,137 +315,6 @@ def generate_figures(history: Dict[str, Any]):
     plt.savefig("figures/2_scenario_experiments.png", bbox_inches="tight")
     plt.close()
     print("  Saved: figures/2_scenario_experiments.png")
-
-    # -------------------------------------------------------------
-    # Figure 3: Grafana Dashboard Visual Simulation
-    # -------------------------------------------------------------
-    fig, axs = plt.subplots(3, 3, figsize=(15, 11), dpi=300)
-    fig.patch.set_facecolor("#181B1F")
-
-    for row in axs:
-        for ax in row:
-            ax.set_facecolor("#22252B")
-            ax.tick_params(colors="white")
-            for spine in ax.spines.values():
-                spine.set_color("#3D424D")
-            ax.xaxis.label.set_color("white")
-            ax.yaxis.label.set_color("white")
-            ax.title.set_color("white")
-
-    # P1: Service Status
-    axs[0, 0].text(0.5, 0.5, "UP\n100% Reachable", ha="center", va="center", color="#73BF69", fontsize=20, fontweight="bold")
-    axs[0, 0].set_title("Service Availability", fontsize=11, fontweight="bold")
-    axs[0, 0].axis("off")
-
-    # P2: Total Requests
-    axs[0, 1].text(0.5, 0.5, f"{total_reqs}\nRequests", ha="center", va="center", color="#5794F2", fontsize=22, fontweight="bold")
-    axs[0, 1].set_title("Total Prediction Requests", fontsize=11, fontweight="bold")
-    axs[0, 1].axis("off")
-
-    # P3: Error Rate
-    err_pct = (total_errs / max(1, total_reqs)) * 100.0
-    color_err = "#F2495C" if err_pct > 5 else "#73BF69"
-    axs[0, 2].text(0.5, 0.5, f"{err_pct:.1f}%\nError Rate", ha="center", va="center", color=color_err, fontsize=22, fontweight="bold")
-    axs[0, 2].set_title("Prediction Error Rate", fontsize=11, fontweight="bold")
-    axs[0, 2].axis("off")
-
-    # P4: Request Rate Time Series
-    t_axis = np.arange(0, 15, 1)
-    rates = [2.1, 2.4, 2.2, 2.8, 3.1, 2.9, 2.5, 2.7, 3.0, 3.2, 2.9, 2.8, 3.1, 2.6, 2.4]
-    axs[1, 0].plot(t_axis, rates, color="#5794F2", linewidth=2.5)
-    axs[1, 0].fill_between(t_axis, rates, color="#5794F2", alpha=0.25)
-    axs[1, 0].set_title("Request Rate (req/s)", fontsize=11, fontweight="bold")
-    axs[1, 0].set_xlabel("Time (mins ago)")
-    axs[1, 0].set_ylabel("req/s")
-
-    # P5: P95 vs Avg Latency
-    p95_lat = [0.012, 0.014, 0.011, 0.015, 0.019, 0.018, 0.016, 0.014, 0.021, 0.025, 0.018, 0.016, 0.019, 0.017, 0.015]
-    avg_lat = [0.005, 0.006, 0.005, 0.006, 0.007, 0.006, 0.005, 0.006, 0.008, 0.009, 0.007, 0.006, 0.007, 0.006, 0.005]
-    axs[1, 1].plot(t_axis, p95_lat, color="#FAAD14", linewidth=2, label="P95 Latency")
-    axs[1, 1].plot(t_axis, avg_lat, color="#73BF69", linewidth=2, label="Avg Latency")
-    axs[1, 1].set_title("Prediction Latency (seconds)", fontsize=11, fontweight="bold")
-    axs[1, 1].set_xlabel("Time (mins ago)")
-    axs[1, 1].set_ylabel("Latency (s)")
-    axs[1, 1].legend(loc="upper right", facecolor="#22252B", edgecolor="#3D424D", labelcolor="white", fontsize=8)
-
-    # P6: Class Predictions Distribution
-    classes = ["Setosa", "Versicolor", "Virginica"]
-    class_counts = [
-        history["prediction"].count("setosa"),
-        history["prediction"].count("versicolor"),
-        history["prediction"].count("virginica")
-    ]
-    bars = axs[1, 2].bar(classes, class_counts, color=["#5794F2", "#B877D9", "#37872D"], width=0.5)
-    axs[1, 2].set_title("Predictions by Class", fontsize=11, fontweight="bold")
-    axs[1, 2].set_ylabel("Total Predictions")
-    for b in bars:
-        axs[1, 2].text(b.get_x() + b.get_width()/2, b.get_height() + 1, f"{int(b.get_height())}", ha="center", color="white", fontweight="bold")
-
-    # P7: Feature Drift Z-Score
-    for f in FEATURES:
-        axs[2, 0].plot(range(len(history["drift_z"][f])), history["drift_z"][f], label=f, linewidth=2)
-    axs[2, 0].axhline(3.0, color="#F2495C", linestyle="--", linewidth=1.5)
-    axs[2, 0].axhline(-3.0, color="#F2495C", linestyle="--", linewidth=1.5)
-    axs[2, 0].set_title("Feature Drift Z-Score (Threshold ±3.0)", fontsize=11, fontweight="bold")
-    axs[2, 0].set_xlabel("Samples")
-    axs[2, 0].set_ylabel("z-score")
-    axs[2, 0].legend(loc="upper left", facecolor="#22252B", edgecolor="#3D424D", labelcolor="white", fontsize=7.5)
-
-    # P8: Confidence Gauge
-    axs[2, 1].text(0.5, 0.5, "91.4%\nAvg Confidence", ha="center", va="center", color="#73BF69", fontsize=20, fontweight="bold")
-    axs[2, 1].set_title("Model Confidence", fontsize=11, fontweight="bold")
-    axs[2, 1].axis("off")
-
-    # P9: Host Resource Utilization
-    cpu_usage = [14.2, 15.1, 14.8, 18.2, 22.0, 19.5, 16.3, 15.0, 18.5, 20.1, 16.2, 15.8, 17.0, 15.2, 14.7]
-    mem_usage = [42.1, 42.2, 42.3, 42.5, 42.6, 42.7, 42.8, 42.9, 43.0, 43.1, 43.0, 43.0, 43.1, 43.1, 43.1]
-    axs[2, 2].plot(t_axis, cpu_usage, color="#5794F2", label="CPU (%)", linewidth=2)
-    axs[2, 2].plot(t_axis, mem_usage, color="#FAAD14", label="Memory (%)", linewidth=2)
-    axs[2, 2].set_title("Host Resource Utilization", fontsize=11, fontweight="bold")
-    axs[2, 2].set_xlabel("Time (mins ago)")
-    axs[2, 2].set_ylabel("Utilization (%)")
-    axs[2, 2].legend(loc="upper right", facecolor="#22252B", edgecolor="#3D424D", labelcolor="white", fontsize=8)
-
-    plt.suptitle("Grafana Dashboard: ML Model Monitoring (uid: ml-model-monitoring-iris)", color="white", fontsize=14, fontweight="bold", y=0.99)
-    plt.tight_layout()
-    plt.savefig("figures/3_grafana_dashboard.png", bbox_inches="tight", facecolor=fig.get_facecolor())
-    plt.close()
-    print("  Saved: figures/3_grafana_dashboard.png")
-
-    # -------------------------------------------------------------
-    # Figure 4: Prometheus Targets UP Status
-    # -------------------------------------------------------------
-    fig, ax = plt.subplots(figsize=(10, 4), dpi=300)
-    ax.axis("off")
-    targets_data = [
-        ["ml_api (FastAPI Model Service)", "UP (1)", "http://model-service:8000/metrics", "5s scrape", "Healthy"],
-        ["prometheus (Self Monitoring)", "UP (1)", "http://localhost:9090/metrics", "5s scrape", "Healthy"],
-        ["node_exporter (Host Infrastructure)", "UP (1)", "http://node-exporter:9100/metrics", "5s scrape", "Healthy"]
-    ]
-    col_labels = ["Endpoint / Job Target", "State", "Scrape URL", "Scrape Interval", "Health Status"]
-    table = ax.table(cellText=targets_data, colLabels=col_labels, loc="center", cellLoc="center")
-    table.auto_set_font_size(False)
-    table.set_fontsize(9.5)
-    table.scale(1.2, 2.0)
-
-    # Style header and rows
-    for (r, c), cell in table.get_celld().items():
-        if r == 0:
-            cell.set_facecolor("#1976D2")
-            cell.set_text_props(color="white", fontweight="bold")
-        else:
-            if c == 1:
-                cell.set_facecolor("#E8F5E9")
-                cell.set_text_props(color="#2E7D32", fontweight="bold")
-            else:
-                cell.set_facecolor("#F5F5F5" if r % 2 == 1 else "white")
-
-    plt.title("Prometheus Targets Overview (http://localhost:9090/targets) - Status: 100% UP", fontsize=12, fontweight="bold", pad=20)
-    plt.tight_layout()
-    plt.savefig("figures/4_prometheus_targets_up.png", bbox_inches="tight")
-    plt.close()
-    print("  Saved: figures/4_prometheus_targets_up.png")
-    print("All figures successfully rendered!\n")
 
 if __name__ == "__main__":
     run_scenarios()

@@ -154,10 +154,12 @@ model_feature_drift_zscore
    python simulate.py batch --count 100
    ```
 
-6. **Run complete automated experiment suite:**
+6. **Run the in-process API experiments and generate measured plots:**
    ```bash
    python run_experiments.py
    ```
+
+   Use the live Prometheus and Grafana pages in the Docker Compose setup to inspect scraped metrics and dashboard panels.
 
 ---
 
