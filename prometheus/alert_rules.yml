@@ -1,0 +1,58 @@
+# prometheus/alert_rules.yml
+# Alerting rules for ML Model Monitoring
+# Student: Siddhant Udavant (Roll No: 20, PRN: 12414447, Branch: AI&DS, Div: F)
+
+groups:
+  - name: ml-model-alerts
+    rules:
+      - alert: ModelServiceDown
+        expr: up{job="ml_api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model service is unreachable"
+          description: "FastAPI ML service at job 'ml_api' has been down for more than 30 seconds."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(ml_prediction_errors_total[1m]))
+            / clamp_min(sum(rate(ml_prediction_requests_total[1m])), 1e-9) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Prediction error rate above 5%"
+          description: "Over 5% of prediction requests failed with HTTP 4xx/5xx in the last 1 minute."
+
+      - alert: HighP95Latency
+        expr: |
+          histogram_quantile(0.95, sum by (le)
+            (rate(ml_prediction_latency_seconds_bucket{endpoint="/predict"}[1m]))) > 0.50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 prediction latency exceeds 500ms"
+          description: "95th percentile latency for /predict exceeded 500ms over 2 minutes."
+
+      - alert: FeatureDriftDetected
+        expr: abs(model_feature_drift_zscore) > 3.0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Feature {{ $labels.feature }} data drift detected"
+          description: "Feature {{ $labels.feature }} rolling mean deviates by more than 3 standard errors (|z| > 3.0) from the training baseline."
+
+      - alert: LowModelAccuracy
+        expr: |
+          sum(increase(model_feedback_total{outcome="correct"}[5m]))
+            / sum(increase(model_feedback_total[5m])) < 0.85
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model feedback accuracy fell below 85%"
+          description: "Rolling 5-minute prediction accuracy based on ground-truth feedback is below acceptable threshold."
+

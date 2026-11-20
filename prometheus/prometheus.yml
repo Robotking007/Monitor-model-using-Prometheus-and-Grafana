@@ -1,0 +1,45 @@
+# prometheus/prometheus.yml
+# Assignment 8: Monitor a Machine Learning Model using Prometheus and Grafana
+# Student: Siddhant Udavant (Roll No: 20, PRN: 12414447, Branch: AI&DS, Div: F)
+
+global:
+  scrape_interval: 5s       # Scrape targets every 5 seconds (fast response for lab/demo)
+  evaluation_interval: 5s   # Evaluate alerting rules every 5 seconds
+  scrape_timeout: 4s
+
+# Alerting rules configuration
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+# Alertmanager routing
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Scrape targets definitions
+scrape_configs:
+  # Machine Learning API (FastAPI)
+  - job_name: "ml_api"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - "model-service:8000"
+        labels:
+          environment: "production"
+          service: "iris-classifier"
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # System/Host Node Exporter
+  - job_name: "node_exporter"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["node-exporter:9100"]
+

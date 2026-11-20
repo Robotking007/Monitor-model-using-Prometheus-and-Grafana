@@ -1,0 +1,41 @@
+{
+    "features": [
+        "sepal_length",
+        "sepal_width",
+        "petal_length",
+        "petal_width"
+    ],
+    "classes": [
+        "setosa",
+        "versicolor",
+        "virginica"
+    ],
+    "mean": [
+        5.841666666666667,
+        3.048333333333333,
+        3.77,
+        1.2049999999999998
+    ],
+    "std": [
+        0.8409261933993364,
+        0.4485238783696885,
+        1.7685202474233135,
+        0.7626634003181705
+    ],
+    "min": [
+        4.3,
+        2.0,
+        1.1,
+        0.1
+    ],
+    "max": [
+        7.9,
+        4.4,
+        6.9,
+        2.5
+    ],
+    "sample_count": 120,
+    "accuracy": 0.9666666666666667,
+    "model_type": "RandomForestClassifier",
+    "version": "1.0.0"
+}
